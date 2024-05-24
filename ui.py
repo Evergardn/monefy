@@ -1,227 +1,163 @@
-from PySide6.QtWidgets import QWidget, QLabel, QPushButton
-from PySide6.QtGui import QPainter, QColor, QBrush
-from PySide6.QtCore import Qt
- 
+import sys
+import math
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QDialog, QLineEdit, QHBoxLayout, QInputDialog, QColorDialog
+from PySide6.QtGui import QPainter, QColor, QBrush, QPixmap, QFont
+from PySide6.QtCore import Qt, Signal
+from dialogs import *
+from services.get_balance_from_db import get_balance
+from buttons.food import AddFoodDialog
+
 class CircleWidget(QWidget):
+    outer_color = QColor("#aaa8ab")
+    circle_color = QColor("#FFEBD8")
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Monefy")
-        self.setGeometry(100, 100, 700, 700)
         self.setStyleSheet("background-color: #FFEBD8;")
-        self.user_id = None
+        self.setGeometry(100, 100, 700, 700)
+        self.segment_data = {}
 
         self.income_label = QLabel("0,00 грн.", self)
-        self.income_label.setStyleSheet("color: #4a8763; font-size: 12pt;")
+        self.income_label.setStyleSheet("color: #60c48e; font-size: 12pt;")
+        self.income_label.setFont(QFont("Inter", 14, QFont.Thin))
         self.income_label.setAlignment(Qt.AlignCenter)
-        self.income_label.move(310, 280)
-        self.income_label.resize(100, 30)
 
         self.expenses_label = QLabel("0,00 грн.", self)
         self.expenses_label.setStyleSheet("color: rgb(202, 128, 131); font-size: 12pt;")
+        self.expenses_label.setFont(QFont("Inter", 14, QFont.Thin))
         self.expenses_label.setAlignment(Qt.AlignCenter)
-        self.expenses_label.move(310, 330)
-        self.expenses_label.resize(100, 30)
-
 
         self.balance_amount = 0.00
-        self.balance_label = QLabel(f"Баланс: {self.balance_amount:.2f} грн.", self)
-        self.balance_label.setStyleSheet("background-color: rgb(176, 229, 196); color: white; font-size: 12pt;")
+        self.balance_label = QLabel(f"Баланс: 0.00 грн.", self)
+        self.balance_label.setStyleSheet("background-color: #60c48e; color: #d2d5d3; font-size: 12pt;")
+        self.balance_label.setFont(QFont("Inter", 14, QFont.Thin))
         self.balance_label.setAlignment(Qt.AlignCenter)
-        self.balance_label.move(295, 650)
-        self.balance_label.resize(150, 30)
+        self.balance_label.move(250, 650)
+        self.balance_label.resize(200, 30)
 
         self.add_balance = QPushButton(f'+', self)
         self.add_balance.setStyleSheet("color: black; font-size: 12pt;")
-        self.add_balance.setGeometry(450, 650, 50, 50)
-        self.add_balance.resize(30, 30)
+        self.add_balance.setGeometry(455, 650, 30, 30)
+        self.add_balance.clicked.connect(self.balance)
 
         self.remove_balance = QPushButton(f'-', self)
         self.remove_balance.setStyleSheet("color: black; font-size: 12pt;")
-        self.remove_balance.setGeometry(260, 650, 50, 50)
-        self.remove_balance.resize(30, 30)
+        self.remove_balance.setGeometry(215, 650, 30, 30)
+        self.remove_balance.clicked.connect(self.rem_balance)
 
-        self.food_button = QPushButton(self)
-        self.food_button.setGeometry(50, 40, 75, 75)
-        self.food_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/food.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+        button_properties = [
+            ("img/food.png", "food_button"),
+            ("img/property.png", "property_button"),
+            ("img/cafe.png", "cafe_button"),
+            ("img/hygiene.png", "hygiene_button"),
+            ("img/sport.png", "sport_button"),
+            ("img/health.png", "health_button"),
+            ("img/connection.png", "connection_button"),
+            ("img/pet.png", "pet_button"),
+            ("img/present.png", "present_button"),
+            ("img/clothes.png", "clothes_button"),
+            ("img/taxi.png", "taxi_button"),
+            ("img/fun.png", "fun_button"),
+            ("img/transport.png", "transport_button"),
+            ("img/car.png", "car_button"),
+        ]
 
-        self.property_button = QPushButton(self)
-        self.property_button.setGeometry(50, 160, 75, 75)
-        self.property_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/property.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+        self.create_circle_buttons(button_properties, radius=230, button_size=75)
 
-        self.cafe_button = QPushButton(self)
-        self.cafe_button.setGeometry(50, 290, 75, 75)
-        self.cafe_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/cafe.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+    def create_circle_buttons(self, button_properties, radius, button_size):
+        center_x = self.width() // 2
+        center_y = self.height() // 2
+        angle_step = 360 / len(button_properties)
 
-        self.hygiene_button = QPushButton(self)
-        self.hygiene_button.setGeometry(50, 420, 75, 75)
-        self.hygiene_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/hygiene.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
-        self.sport_button = QPushButton(self)
-        self.sport_button.setGeometry(50, 540, 75, 75)
-        self.sport_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/sport.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+        for i, (icon_path, name) in enumerate(button_properties):
+            angle = math.radians(i * angle_step)
+            x = center_x + int(radius * math.cos(angle)) - button_size // 2
+            y = center_y + int(radius * math.sin(angle)) - button_size // 2
 
-        self.health_button = QPushButton(self)
-        self.health_button.setGeometry(220, 540, 75, 75)
-        self.health_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/health.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+            button = QPushButton(self)
+            button.setObjectName(name)
+            button.setGeometry(x, y, button_size, button_size)
+            button.setStyleSheet(
+                f"QPushButton {{"
+                f"   background-image: url({icon_path});"
+                f"   border-radius: 10px;"
+                f"}}"
+                f"QPushButton:pressed {{"
+                f"   background-color: rgba(0, 0, 0, 0.3);"
+                f"}}"
+            )
+            button.clicked.connect(self.handle_click_button)
 
-        self.connection_button = QPushButton(self)
-        self.connection_button.setGeometry(390, 540, 75, 75)
-        self.connection_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/connection.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+    def handle_click_button(self):
+        button = self.sender()
+        button_name = button.objectName()
+        print(f'Button {button_name} was clicked')
+        if button_name == 'food_button':
+            dialog = AddFoodDialog(self)
+            dialog.exec()
 
-        self.pet_button = QPushButton(self)
-        self.pet_button.setGeometry(550, 540, 75, 75)
-        self.pet_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/pet.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+    def resizeEvent(self, event):
+        self.update_label_positions()
+        super().resizeEvent(event)
 
-        self.present_button = QPushButton(self)
-        self.present_button.setGeometry(550, 420, 75, 75)
-        self.present_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/present.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+    def update_label_positions(self):
+        inner_circle_radius = 100
+        center_x = self.width() // 2
+        center_y = self.height() // 2
 
-        self.clothes_button = QPushButton(self)
-        self.clothes_button.setGeometry(550, 300, 75, 75)
-        self.clothes_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/clothes.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+        self.income_label.resize(150, 30)
+        self.income_label.move(center_x - self.income_label.width() // 2, center_y - self.income_label.height())
 
-        self.taxi_button = QPushButton(self)
-        self.taxi_button.setGeometry(550, 180, 75, 75)
-        self.taxi_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/taxi.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
+        self.expenses_label.resize(150, 30)
+        self.expenses_label.move(center_x - self.expenses_label.width() // 2, center_y)
 
-        self.fun_button = QPushButton(self)
-        self.fun_button.setGeometry(550, 40, 77, 77)
-        self.fun_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/fun.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
-
-        self.transport_button = QPushButton(self)
-        self.transport_button.setGeometry(390, 40, 75, 75)
-        self.transport_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/transport.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
-
-        self.car_button = QPushButton(self)
-        self.car_button.setGeometry(220, 40, 75, 75)
-        self.car_button.setStyleSheet(
-    "QPushButton {"
-    "   background-image: url(img/car.png);"
-    "   border-radius: 10px;"
-    "}"
-    "QPushButton:pressed {"
-    "   background-color: rgba(0, 0, 0, 0.3);"
-    "}"
-)
-
-        self.circle_color = QColor("#FFEBD8")
-        self.outer_color = QColor("#aaa8ab")
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.Antialiasing)
 
+        self.drawOuterCircle(painter)
+        self.drawInnerCircle(painter)
+
+    def drawOuterCircle(self, painter):
         painter.setBrush(QBrush(self.outer_color))
         painter.setPen(Qt.NoPen)
-        painter.drawEllipse(210, 173, 300, 300)
+        outer_circle_radius = 150
+        outer_circle_x = (self.width() - outer_circle_radius * 2) / 2
+        outer_circle_y = (self.height() - outer_circle_radius * 2) / 2
+        painter.drawEllipse(outer_circle_x, outer_circle_y, outer_circle_radius * 2, outer_circle_radius * 2)
 
+    def drawInnerCircle(self, painter):
         painter.setBrush(QBrush(self.circle_color))
         painter.setPen(Qt.NoPen)
         inner_circle_radius = 100
-        inner_circle_x = 360
-        inner_circle_y = 323
-        painter.drawEllipse(inner_circle_x - inner_circle_radius, inner_circle_y - inner_circle_radius,
-                             inner_circle_radius * 2, inner_circle_radius * 2)
+        inner_circle_x = (self.width() - inner_circle_radius * 2) / 2
+        inner_circle_y = (self.height() - inner_circle_radius * 2) / 2
+        painter.drawEllipse(inner_circle_x, inner_circle_y, inner_circle_radius * 2, inner_circle_radius * 2)
+
+    def balance(self):
+        dialog = AddBalanceDialog()
+        dialog.balance_added.connect(self.update_balance)
+        dialog.exec()
+
+    def rem_balance(self):
+        dialog = RemoveBalanceDialog()
+        dialog.balance_removed.connect(self.update_balance)
+        dialog.exec()
+
+    def update_balance(self, amount, operation):
+        if operation == 'add':
+            income_amount = float(self.income_label.text().replace(',', '.').replace(' грн.', ''))
+            income_amount += amount
+            self.income_label.setText(f"{income_amount:.2f} грн.")
+
+            self.balance_amount += amount
+        elif operation == 'remove':
+            expenses_amount = float(self.expenses_label.text().replace(',', '.').replace(' грн.', ''))
+            expenses_amount += abs(amount)
+            self.expenses_label.setText(f"{expenses_amount:.2f} грн.")
+
+            self.balance_amount -= amount
+
+        self.balance_label.setText(f"Баланс: {self.balance_amount:.2f} грн.")

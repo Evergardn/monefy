@@ -9,11 +9,9 @@ class AddSportDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Добавить 'Веселье'")
+        self.setWindowTitle("Расходы")
         self.setFixedSize(200, 100)
 
-        self.lbel = QLabel("Введите сумму:", self)
-        self.lbel.setStyleSheet("color: black;")
         self.vaue_label = QLabel("Стоимость:", self)
         self.vaue_input = QLineEdit(self)
         self.vaue_input.setStyleSheet("color: black;")
@@ -21,7 +19,6 @@ class AddSportDialog(QDialog):
         self.ad_button.setStyleSheet("color: black;")
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self.lbel)
         layout.addWidget(self.vaue_label)
         layout.addWidget(self.vaue_input)
         layout.addWidget(self.ad_button)
@@ -38,7 +35,18 @@ class AddSportDialog(QDialog):
 
                 conn = sqlite3.connect('cash.db')
                 cursor = conn.cursor()
-                cursor.execute('INSERT INTO expenses (Type, Quantity, Time) VALUES (?, ?, datetime("now", "localtime"))', ('sport', value))
+                user_id = '2'
+                type_to_check = 'sport'
+
+                cursor.execute('SELECT Type FROM expenses WHERE User_id = ?', (user_id,))
+                existing_type = cursor.fetchone()
+
+                if existing_type and existing_type[0] == type_to_check:
+                    cursor.execute('UPDATE expenses SET Quantity = ?, Time = datetime("now", "localtime") WHERE User_id = ? AND Type = ?', (value, user_id, type_to_check))
+                    print(f'{type_to_check.capitalize()} updated')
+                else:
+                    cursor.execute('INSERT INTO expenses (User_id, Type, Quantity, Time) VALUES (?, ?, ?, datetime("now", "localtime"))', (user_id, type_to_check, value))
+                    print(f'{type_to_check.capitalize()} inserted')
                 conn.commit()
                 conn.close()
             except ValueError as e:

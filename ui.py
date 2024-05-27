@@ -6,6 +6,19 @@ from PySide6.QtCore import Qt, Signal
 from dialogs import *
 from services.get_balance_from_db import get_balance
 from buttons.food import AddFoodDialog
+from buttons.property import AddPropertyDialog
+from buttons.cafe import AddCafeDialog
+from buttons.hygiene import AddHygieneDialog
+from buttons.sport import AddSportDialog
+from buttons.health import AddHealthDialog
+from buttons.connection import AddConnectionDialog
+from buttons.pet import AddPetDialog
+from buttons.present import AddPresentDialog
+from buttons.clothes import AddClothesDialog
+from buttons.taxi import AddTaxiDialog
+from buttons.fun import AddFunDialog
+from buttons.transport import AddTransportDialog
+from buttons.car import AddCarDialog
 
 class CircleWidget(QWidget):
     outer_color = QColor("#aaa8ab")
@@ -95,7 +108,35 @@ class CircleWidget(QWidget):
         print(f'Button {button_name} was clicked')
         if button_name == 'food_button':
             dialog = AddFoodDialog(self)
-            dialog.exec()
+        elif button_name == 'property_button':
+            dialog = AddPropertyDialog(self)
+        elif button_name == 'cafe_button':
+            dialog = AddCafeDialog(self)
+        elif button_name == 'hygiene_button':
+            dialog = AddHygieneDialog(self)
+        elif button_name == 'sport_button':
+            dialog = AddSportDialog(self)
+        elif button_name == 'health_button':
+            dialog = AddHealthDialog(self)
+        elif button_name == 'connection_button':
+            dialog = AddConnectionDialog(self)
+        elif button_name == 'pet_button':
+            dialog = AddPetDialog(self)
+        elif button_name == 'present_button':
+            dialog = AddPresentDialog(self)
+        elif button_name == 'clothes_button':
+            dialog = AddClothesDialog(self)
+        elif button_name == 'taxi_button':
+            dialog = AddTaxiDialog(self)
+        elif button_name == 'fun_button':
+            dialog = AddFunDialog(self)
+        elif button_name == 'transport_button':
+            dialog = AddTransportDialog(self)
+        elif button_name == 'car_button':
+            dialog = AddCarDialog(self)
+        else:
+            return 'None'
+        dialog.exec()
 
     def resizeEvent(self, event):
         self.update_label_positions()

@@ -12,8 +12,6 @@ class AddPropertyDialog(QDialog):
         self.setWindowTitle("Расходы")
         self.setFixedSize(200, 100)
 
-        self.label = QLabel("Введите сумму:", self)
-        self.label.setStyleSheet("color: black;")
         self.value_label = QLabel("Стоимость:", self)
         self.value_input = QLineEdit(self)
         self.value_input.setStyleSheet("color: black;")
@@ -21,7 +19,6 @@ class AddPropertyDialog(QDialog):
         self.add_button.setStyleSheet("color: black;")
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self.label)
         layout.addWidget(self.value_label)
         layout.addWidget(self.value_input)
         layout.addWidget(self.add_button)
@@ -38,7 +35,18 @@ class AddPropertyDialog(QDialog):
 
                 conn = sqlite3.connect('cash.db')
                 cursor = conn.cursor()
-                cursor.execute('INSERT INTO expenses (Type, Quantity, Time) VALUES (?, ?, datetime("now", "localtime"))', ('property', value))
+                user_id = '2'
+                type_to_check = 'property'
+
+                cursor.execute('SELECT Type FROM expenses WHERE User_id = ?', (user_id,))
+                existing_type = cursor.fetchone()
+
+                if existing_type and existing_type[0] == type_to_check:
+                    cursor.execute('UPDATE expenses SET Quantity = ?, Time = datetime("now", "localtime") WHERE User_id = ? AND Type = ?', (value, user_id, type_to_check))
+                    print(f'{type_to_check.capitalize()} updated')
+                else:
+                    cursor.execute('INSERT INTO expenses (User_id, Type, Quantity, Time) VALUES (?, ?, ?, datetime("now", "localtime"))', (user_id, type_to_check, value))
+                    print(f'{type_to_check.capitalize()} inserted')
                 conn.commit()
                 conn.close()
             except ValueError as e:

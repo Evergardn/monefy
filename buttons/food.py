@@ -3,6 +3,7 @@ from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QPixmap
 from PySide6.QtCore import Qt, Signal
 import sqlite3
 import logger
+import datetime
 
 class AddFoodDialog(QDialog):
     food_added = Signal(float)
@@ -12,8 +13,6 @@ class AddFoodDialog(QDialog):
         self.setWindowTitle("Расходы")
         self.setFixedSize(200, 100)
 
-        self.bel = QLabel("Введите сумму:", self)
-        self.bel.setStyleSheet("color: black;")
         self.vue_label = QLabel("Стоимость:", self)
         self.vue_input = QLineEdit(self)
         self.vue_input.setStyleSheet("color: black;")
@@ -21,7 +20,6 @@ class AddFoodDialog(QDialog):
         self.a_button.setStyleSheet("color: black;")
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self.bel)
         layout.addWidget(self.vue_label)
         layout.addWidget(self.vue_input)
         layout.addWidget(self.a_button)
@@ -38,7 +36,18 @@ class AddFoodDialog(QDialog):
 
                 conn = sqlite3.connect('cash.db')
                 cursor = conn.cursor()
-                cursor.execute('INSERT INTO expenses (Type, Quantity, Time) VALUES (?, ?, datetime("now", "localtime"))', ('food', value))
+                user_id = '2'
+                type_to_check = 'food'
+
+                cursor.execute('SELECT Type FROM expenses WHERE User_id = ?', (user_id,))
+                existing_type = cursor.fetchone()
+
+                if existing_type and existing_type[0] == type_to_check:
+                    cursor.execute('UPDATE expenses SET Quantity = ?, Time = datetime("now", "localtime") WHERE User_id = ? AND Type = ?', (value, user_id, type_to_check))
+                    print(f'{type_to_check.capitalize()} updated')
+                else:
+                    cursor.execute('INSERT INTO expenses (User_id, Type, Quantity, Time) VALUES (?, ?, ?, datetime("now", "localtime"))', (user_id, type_to_check, value))
+                    print(f'{type_to_check.capitalize()} inserted')
                 conn.commit()
                 conn.close()
             except ValueError as e:

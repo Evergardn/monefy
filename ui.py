@@ -189,16 +189,14 @@ class CircleWidget(QWidget):
 
     def update_balance(self, amount, operation):
         if operation == 'add':
-            income_amount = float(self.income_label.text().replace(',', '.').replace(' грн.', ''))
-            income_amount += amount
+            income_amount = amount
             self.income_label.setText(f"{income_amount:.2f} грн.")
-
-            self.balance_amount += amount
+            self.balance_amount = amount
+            
         elif operation == 'remove':
             expenses_amount = float(self.expenses_label.text().replace(',', '.').replace(' грн.', ''))
             expenses_amount += abs(amount)
             self.expenses_label.setText(f"{expenses_amount:.2f} грн.")
-
             self.balance_amount -= amount
 
         self.balance_label.setText(f"Баланс: {self.balance_amount:.2f} грн.")

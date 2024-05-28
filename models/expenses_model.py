@@ -4,7 +4,7 @@ conn, cursor = connect_db()
 
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS expenses (
-        User_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        User_id INTEGER,
         Type TEXT,
         Quantity REAL,
         Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -1,8 +1,8 @@
-from conect_db import conect_db
+from connect_db import connect_db
 
-conn, cursor = conect_db()
+conn, cursor = connect_db()
 
-conect_db.execute('''
+cursor.execute('''
     CREATE TABLE IF NOT EXISTS balance (
         User_id INTEGER PRIMARY KEY AUTOINCREMENT,
         Amount REAL,

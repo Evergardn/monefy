@@ -3,6 +3,7 @@ from PySide6.QtGui import QPainter, QColor, QBrush, QPixmap, QFont
 from PySide6.QtCore import Signal
 from services.add_to_db import add_data_to_db
 from services.remove_from_db import remove_data_from_db
+from services.get_balance_from_db import get_balance
 import functools
 
 class AddBalanceDialog(QDialog):
@@ -34,8 +35,9 @@ class AddBalanceDialog(QDialog):
         amount_text = self.amount_input.text()
         try:
             amount = float(amount_text)
-            add_data_to_db(user_id, amount)
-            self.balance_added.emit(amount, 'add')
+            main_amount = float(amount) + float(get_balance(user_id=2))
+            add_data_to_db(user_id, main_amount)
+            self.balance_added.emit(main_amount, 'add')
             self.accept()
         except ValueError:
             print("Invalid amount entered.")

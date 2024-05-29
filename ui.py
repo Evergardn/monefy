@@ -160,18 +160,19 @@ class CircleWidget(QWidget):
         current_amount = float(self.expenses_label.text().replace(' грн.', '').replace(',', '.'))
         new_amount = (current_amount + amount)-1
         balance_amount = (self.balancee-new_amount)-1
+        print(f"New amount: {new_amount},\n Total balance before: {self.balancee},\n Balance amount: {balance_amount} ")
         user_id = 2
-        print('after variables')
 
         if self.balancee < new_amount:
             return "The value can't be lower or equal 0!"
         else:
             conn, cursor = connect_db()
             cursor.execute('UPDATE balance SET Amount = ?, Time = datetime("now", "localtime") WHERE User_id = ?', (balance_amount, user_id))
+            conn.commit()
             conn.close()
             self.expenses_label.setText(f'{new_amount+1:.2f} грн.')
             self.balance_label.setText(f"Баланс: {balance_amount:.2f} грн.")
-            print('in if')
+        print(f"Total balance after: {self.balancee}")
             
 
     def resizeEvent(self, event):

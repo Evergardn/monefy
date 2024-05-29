@@ -2,34 +2,25 @@ import sys
 import math
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QDialog, QLineEdit, QHBoxLayout, QInputDialog, QColorDialog
 from PySide6.QtGui import QPainter, QColor, QBrush, QPixmap, QFont
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from dialogs import *
 from services.get_balance_from_db import get_balance
-from buttons.food import AddFoodDialog
-from buttons.property import AddPropertyDialog
-from buttons.cafe import AddCafeDialog
-from buttons.hygiene import AddHygieneDialog
-from buttons.sport import AddSportDialog
-from buttons.health import AddHealthDialog
-from buttons.connection import AddConnectionDialog
-from buttons.pet import AddPetDialog
-from buttons.present import AddPresentDialog
-from buttons.clothes import AddClothesDialog
-from buttons.taxi import AddTaxiDialog
-from buttons.fun import AddFunDialog
-from buttons.transport import AddTransportDialog
-from buttons.car import AddCarDialog
+from services.dialog_opener import *
+from models.connect_db import connect_db
 
 class CircleWidget(QWidget):
     outer_color = QColor("#aaa8ab")
     circle_color = QColor("#FFEBD8")
+    
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Monefy")
         self.setStyleSheet("background-color: #FFEBD8;")
         self.setGeometry(100, 100, 700, 700)
-        self.segment_data = {}
+
+        self.balancee = float(get_balance(user_id=2))
+        print(f"Balance: {self.balancee}")
 
         self.income_label = QLabel("0,00 грн.", self)
         self.income_label.setStyleSheet("color: #60c48e; font-size: 12pt;")
@@ -41,8 +32,7 @@ class CircleWidget(QWidget):
         self.expenses_label.setFont(QFont("Inter", 14, QFont.Thin))
         self.expenses_label.setAlignment(Qt.AlignCenter)
 
-        self.balance_amount = 0.00
-        self.balance_label = QLabel(f"Баланс: 0.00 грн.", self)
+        self.balance_label = QLabel(f"Баланс: {self.balancee:.2f} грн.", self)
         self.balance_label.setStyleSheet("background-color: #60c48e; color: #d2d5d3; font-size: 12pt;")
         self.balance_label.setFont(QFont("Inter", 14, QFont.Thin))
         self.balance_label.setAlignment(Qt.AlignCenter)
@@ -107,36 +97,82 @@ class CircleWidget(QWidget):
         button_name = button.objectName()
         print(f'Button {button_name} was clicked')
         if button_name == 'food_button':
-            dialog = AddFoodDialog(self)
+            dialog = open_food_dialog(self)
+            dialog.food_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'property_button':
-            dialog = AddPropertyDialog(self)
+            dialog = open_property_dialog(self)
+            dialog.property_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'cafe_button':
-            dialog = AddCafeDialog(self)
+            dialog = open_cafe_dialog(self)
+            dialog.cafe_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'hygiene_button':
-            dialog = AddHygieneDialog(self)
+            dialog = open_hygiene_dialog(self)
+            dialog.hygiene_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'sport_button':
-            dialog = AddSportDialog(self)
+            dialog = open_sport_dialog(self)
+            dialog.sport_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'health_button':
-            dialog = AddHealthDialog(self)
+            dialog = open_health_dialog(self)
+            dialog.health_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'connection_button':
-            dialog = AddConnectionDialog(self)
+            dialog = open_connection_dialog(self)
+            dialog.connection_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'pet_button':
-            dialog = AddPetDialog(self)
+            dialog = open_pet_dialog(self)
+            dialog.pet_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'present_button':
-            dialog = AddPresentDialog(self)
+            dialog = open_present_dialog(self)
+            dialog.present_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'clothes_button':
-            dialog = AddClothesDialog(self)
+            dialog = open_clothes_dialog(self)
+            dialog.clothes_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'taxi_button':
-            dialog = AddTaxiDialog(self)
+            dialog = open_taxi_dialog(self)
+            dialog.taxi_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'fun_button':
-            dialog = AddFunDialog(self)
+            dialog = open_fun_dialog(self)
+            dialog.fun_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'transport_button':
-            dialog = AddTransportDialog(self)
+            dialog = open_transport_dialog(self)
+            dialog.transport_added.connect(self.update_expenses_label)
+            dialog.exec()
         elif button_name == 'car_button':
-            dialog = AddCarDialog(self)
+            dialog = open_car_dialog(self)
+            dialog.car_added.connect(self.update_expenses_label)
+            dialog.exec()
         else:
             return 'None'
-        dialog.exec()
+
+    @Slot(float)
+    def update_expenses_label(self, amount):
+        current_amount = float(self.expenses_label.text().replace(' грн.', '').replace(',', '.'))
+        new_amount = (current_amount + amount)-1
+        balance_amount = (self.balancee-new_amount)-1
+        user_id = 2
+        print('after variables')
+
+        if self.balancee < new_amount:
+            return "The value can't be lower or equal 0!"
+        else:
+            conn, cursor = connect_db()
+            cursor.execute('UPDATE balance SET Amount = ?, Time = datetime("now", "localtime") WHERE User_id = ?', (balance_amount, user_id))
+            conn.close()
+            self.expenses_label.setText(f'{new_amount+1:.2f} грн.')
+            self.balance_label.setText(f"Баланс: {balance_amount:.2f} грн.")
+            print('in if')
+            
 
     def resizeEvent(self, event):
         self.update_label_positions()

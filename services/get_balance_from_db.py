@@ -7,6 +7,6 @@ def get_balance(user_id):
     cursor.execute('SELECT Amount FROM balance WHERE User_id = ?', (user_id,))
     amount = cursor.fetchone()[0]
     conn.close()
-    return amount
+    return float(amount)
 
 

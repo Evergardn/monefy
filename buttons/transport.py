@@ -3,6 +3,7 @@ from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QPixmap
 from PySide6.QtCore import Qt, Signal
 import sqlite3
 import logger
+from services.get_balance_from_db import get_balance
 
 class AddTransportDialog(QDialog):
     transport_added = Signal(float)
@@ -30,6 +31,7 @@ class AddTransportDialog(QDialog):
         if value_text:
             try:
                 value = float(value_text.replace(',', '.'))
+                main_value = float(value) + float(self.find_quantity(user_id=2, type='transport'))
                 self.transport_added.emit(value)
                 self.accept()
 
@@ -37,17 +39,29 @@ class AddTransportDialog(QDialog):
                 cursor = conn.cursor()
                 user_id = '2'
                 type_to_check = 'transport'
+                amount = float(get_balance(user_id=2))
 
                 cursor.execute('SELECT Type FROM expenses WHERE User_id = ?', (user_id,))
                 existing_type = cursor.fetchone()
 
-                if existing_type and existing_type[0] == type_to_check:
-                    cursor.execute('UPDATE expenses SET Quantity = ?, Time = datetime("now", "localtime") WHERE User_id = ? AND Type = ?', (value, user_id, type_to_check))
-                    print(f'{type_to_check.capitalize()} updated')
+                if amount > 0:
+                    if existing_type and existing_type[0] == type_to_check:
+                        cursor.execute('UPDATE expenses SET Quantity = ?, Time = datetime("now", "localtime") WHERE User_id = ? AND Type = ?', (main_value, user_id, type_to_check))
+                        print(f'{type_to_check.capitalize()} updated')
+                    else:
+                        cursor.execute('INSERT INTO expenses (User_id, Type, Quantity, Time) VALUES (?, ?, ?, datetime("now", "localtime"))', (user_id, type_to_check, main_value))
+                        print(f'{type_to_check.capitalize()} inserted')
                 else:
-                    cursor.execute('INSERT INTO expenses (User_id, Type, Quantity, Time) VALUES (?, ?, ?, datetime("now", "localtime"))', (user_id, type_to_check, value))
-                    print(f'{type_to_check.capitalize()} inserted')
+                    print("Value can't be lower or equal 0!")
                 conn.commit()
                 conn.close()
             except ValueError as e:
                 logger.error(e)
+
+    def find_quantity(self, user_id, type):
+        conn = sqlite3.connect('cash.db')
+        cursor = conn.cursor()
+
+        cursor.execute('SELECT Quantity FROM expenses WHERE User_id = ?', (user_id,))
+        quantity = cursor.fetchone()[0]
+        return quantity

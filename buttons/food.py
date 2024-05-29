@@ -3,7 +3,6 @@ from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QPixmap
 from PySide6.QtCore import Qt, Signal
 import sqlite3
 import logger
-import datetime
 from services.get_balance_from_db import get_balance
 
 class AddFoodDialog(QDialog):
@@ -33,7 +32,6 @@ class AddFoodDialog(QDialog):
             try:
                 value = float(value_text.replace(',', '.'))
                 main_value = float(value) + float(self.find_quantity(user_id=2, type='food'))
-                # print(main_value)
                 self.food_added.emit(value)
                 self.accept()
         
@@ -68,4 +66,3 @@ class AddFoodDialog(QDialog):
         cursor.execute('SELECT Quantity FROM expenses WHERE User_id = ?', (user_id,))
         quantity = cursor.fetchone()[0]
         return quantity
-    
